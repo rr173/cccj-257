@@ -17,11 +17,16 @@
 | `make_merge_request.py` | 合并请求生成助手 |
 | `test_archive_merge.py` | 合并能力的测试夹具 |
 | `demo_archive_merge.sh` | 合并能力端到端演示 |
+| `offline_repair.py` | **归档包离线修复**（坏盘后凭行列异或校验重建逐字节相同的包，见 `README_OFFLINE_REPAIR.md`） |
+| `test_offline_repair.py` | 离线修复测试夹具 |
+| `demo_offline_repair.sh` | 离线修复端到端演示 |
 
 本文件描述原有的单文件原位重排。多归档合并是新增的独立子能力，只读输入、
 只写新的输出目录，不改变本文件的任何命令行为；详见
 [`README_ARCHIVE_MERGE.md`](README_ARCHIVE_MERGE.md)（也可从本入口转发：
-`python3 -I rearrange.py archive-merge …` / `archive-verify …`）。
+`python3 -I rearrange.py archive-merge …` / `archive-verify …`）。冷存储归档包
+损坏后的离线修复见 [`README_OFFLINE_REPAIR.md`](README_OFFLINE_REPAIR.md)
+（也可从本入口转发：`python3 -I rearrange.py make-repair-kit …` / `repair …`）。
 
 ## 作业描述（输入 JSON）
 

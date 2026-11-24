@@ -824,9 +824,27 @@ def _accept_existing(norm, req_sha, output_path):
 # ---------------------------------------------------------------------------
 
 
+def _run_offline_repair_cli(argv):
+    """把离线修复子命令转交给同目录的 offline_repair.py。
+
+    合并/核验的既有命令与语义保持不变；离线修复是独立能力，只是复用
+    同一个入口以便发现。--fault 等参数语义由 offline_repair.py 定义。
+    """
+    import importlib.util
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "offline_repair.py")
+    spec = importlib.util.spec_from_file_location("_offline_repair", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.main(argv)
+
+
 def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
     parser = argparse.ArgumentParser(
-        description="多归档固定块去重合并（镜像 + 清单的原子归档包）"
+        description="多归档固定块去重合并（镜像 + 清单的原子归档包）；"
+                    "make-repair-kit/repair 为离线修复，见 offline_repair.py"
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
 
@@ -842,7 +860,27 @@ def main(argv=None):
     p_ver.add_argument("--request", required=True)
     p_ver.add_argument("--package", required=True)
 
+    p_kit = sub.add_parser("make-repair-kit",
+                           help="从健康归档包与分组表生成离线修复资料")
+    p_kit.add_argument("--package", required=True)
+    p_kit.add_argument("--groups", required=True)
+    p_kit.add_argument("--out", required=True)
+    p_kit.add_argument("--digest-file")
+    p_kit.add_argument("--fault", action="append", default=[])
+
+    p_rep = sub.add_parser("repair", help="按修复资料离线重建归档包")
+    p_rep.add_argument("--descriptor", required=True)
+    p_rep.add_argument("--digest", required=True)
+    p_rep.add_argument("--old-image", required=True)
+    p_rep.add_argument("--rows-parity", required=True)
+    p_rep.add_argument("--cols-parity", required=True)
+    p_rep.add_argument("--output", required=True)
+    p_rep.add_argument("--fault", action="append", default=[])
+
     args = parser.parse_args(argv)
+    if args.cmd in ("make-repair-kit", "repair"):
+        kit_cmd = "make-kit" if args.cmd == "make-repair-kit" else "repair"
+        return _run_offline_repair_cli([kit_cmd] + list(argv[1:]))
     try:
         if args.cmd == "merge":
             fault = FaultInjection(args.fault)

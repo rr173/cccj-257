@@ -13,6 +13,7 @@
 | `make_merge_request.py` | 请求生成助手（按块缓冲计算摘要，可造示例数据） |
 | `test_archive_merge.py` | 端到端、失败路径、原子发布故障矩阵、随机被杀、篡改识别、规模测试 |
 | `demo_archive_merge.sh` | 小文件端到端演示 |
+| `offline_repair.py` | **归档包离线修复**（坏盘后凭行列异或校验重建逐字节相同的包，见 [`README_OFFLINE_REPAIR.md`](README_OFFLINE_REPAIR.md)），也可经本入口 `make-repair-kit` / `repair` 调用 |
 
 ## 请求（输入 JSON）
 
@@ -187,4 +188,21 @@ out.pkg/
 ```bash
 python3 -I test_archive_merge.py   # 全套（含原子发布故障矩阵与篡改识别）
 ./demo_archive_merge.sh            # 小文件合并 -> 核验 -> 篡改拒绝 -> 重开幂等
+```
+
+## 离线修复（冷存储归档包损坏后重建）
+
+归档包迁到冷存储、来源归档下线后，若坏盘上的 `image.bin` 出现翻转/短块/
+缺槽或 `manifest.json` 丢失，可用迁移时封存的行列异或修复资料，在另一块盘上
+重建出与迁移前**逐字节相同**的归档包，而无需重新合并来源文件。该能力是独立
+模块，详见 [`README_OFFLINE_REPAIR.md`](README_OFFLINE_REPAIR.md)，也可直接
+从本入口调用：
+
+```bash
+python3 -I archive_merge.py make-repair-kit --package out.pkg \
+    --groups groups.json --out repair-kit --digest-file offmedia.sha256
+python3 -I archive_merge.py repair --descriptor repair-kit/repair_desc.json \
+    --digest "$(cat offmedia.sha256)" --old-image /failed-disk/image.bin \
+    --rows-parity /media-a/repair_rows.bin --cols-parity /media-b/repair_cols.bin \
+    --output /healthy-disk/restored.pkg
 ```

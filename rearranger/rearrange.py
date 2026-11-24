@@ -721,6 +721,17 @@ def _run_archive_merge_cli(argv):
     return module.main(argv)
 
 
+def _run_offline_repair_cli(argv):
+    """把离线修复子命令转交给同目录的 offline_repair.py。"""
+    import importlib.util
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "offline_repair.py")
+    spec = importlib.util.spec_from_file_location("_offline_repair", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.main(argv)
+
+
 def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
@@ -729,10 +740,18 @@ def main(argv=None):
         return _run_archive_merge_cli(["merge"] + list(argv[1:]))
     if argv and argv[0] == "archive-verify":
         return _run_archive_merge_cli(["verify"] + list(argv[1:]))
+    # 离线修复子命令同样转交给独立模块，原位重排行为保持不变。
+    # 本入口的 make-repair-kit 对应 offline_repair 的 make-kit。
+    if argv and argv[0] in ("make-repair-kit", "repair"):
+        forwarded = list(argv)
+        if forwarded[0] == "make-repair-kit":
+            forwarded[0] = "make-kit"
+        return _run_offline_repair_cli(forwarded)
 
     parser = argparse.ArgumentParser(
         description="固定块数据文件离线原地重排（崩溃可续、单块备用）；"
-                    "archive-merge/archive-verify 子命令见 archive_merge.py"
+                    "archive-merge/archive-verify 子命令见 archive_merge.py，"
+                    "make-repair-kit/repair 子命令见 offline_repair.py"
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
 
