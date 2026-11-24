@@ -13,6 +13,15 @@
 | `make_job.py` | 作业描述生成助手（块缓冲计算原始摘要） |
 | `test_rearrange.py` | 故障注入测试夹具（短写、杀进程、续接绑定、资源护栏） |
 | `demo_shortwrite_resume.sh` | 小文件复现块内短写中断与续接的端到端演示 |
+| `archive_merge.py` | **多归档固定块去重合并**（镜像 + 清单归档包，独立能力，见 `README_ARCHIVE_MERGE.md`） |
+| `make_merge_request.py` | 合并请求生成助手 |
+| `test_archive_merge.py` | 合并能力的测试夹具 |
+| `demo_archive_merge.sh` | 合并能力端到端演示 |
+
+本文件描述原有的单文件原位重排。多归档合并是新增的独立子能力，只读输入、
+只写新的输出目录，不改变本文件的任何命令行为；详见
+[`README_ARCHIVE_MERGE.md`](README_ARCHIVE_MERGE.md)（也可从本入口转发：
+`python3 -I rearrange.py archive-merge …` / `archive-verify …`）。
 
 ## 作业描述（输入 JSON）
 

@@ -706,9 +706,33 @@ def default_sidecar(data_path):
     return os.path.abspath(data_path) + ".rearrange.d"
 
 
+def _run_archive_merge_cli(argv):
+    """把归档合并子命令转交给同目录的 archive_merge.py。
+
+    本模块保持原位重排的既有行为不变；合并是独立能力，只是复用同一个
+    入口以便发现。--fault 等参数语义由 archive_merge.py 定义。
+    """
+    import importlib.util
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "archive_merge.py")
+    spec = importlib.util.spec_from_file_location("_archive_merge", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.main(argv)
+
+
 def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
+    # 归档合并子命令走独立模块，避免改变 run/verify 的解析与语义
+    if argv and argv[0] == "archive-merge":
+        return _run_archive_merge_cli(["merge"] + list(argv[1:]))
+    if argv and argv[0] == "archive-verify":
+        return _run_archive_merge_cli(["verify"] + list(argv[1:]))
+
     parser = argparse.ArgumentParser(
-        description="固定块数据文件离线原地重排（崩溃可续、单块备用）"
+        description="固定块数据文件离线原地重排（崩溃可续、单块备用）；"
+                    "archive-merge/archive-verify 子命令见 archive_merge.py"
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
 
